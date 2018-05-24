@@ -16,7 +16,7 @@ def initVariables():
     global vCour, dCour, v0, vMax, vMin
     global direction, roueArriereGauche, roueArriereDroite
     global timeDir, d0, dMax, dMin, ch, dPosCentered
-    global dirLock, vLock
+    global dirLock, vLock, backLash, prevDir
     global carLength, carWidth, rapportDir
 
     v0=0
@@ -26,8 +26,6 @@ def initVariables():
     vMin=-300
     timeDir=100
     d0=0
-    dMax=150
-    dMin=-150
     dCour=0
     ch = 'x'
 
@@ -38,9 +36,13 @@ def initVariables():
     dirLock=threading.Lock()
     vLock=threading.Lock()
 
-    carLength=15
-    carWidth=14
-    rapportDir=3/5
+    carLength=18.5
+    carWidth=15
+    rapportDir=12*8/(20*24)
+    dMax=45/rapportDir
+    dMin=-45/rapportDir
+    backLash=16/rapportDir
+    prevDir=0
 
 def checkPareChoc():
     global vCour, v0
@@ -189,7 +191,7 @@ def demiTour() :
 def setDirAndSpeed (offsetDir, offsetSpeed ) :
     global dCour, vCour, dMin, dMax
     global direction, roueArriereGauche, roueArriereDroite
-    global dirLock, vLock
+    global dirLock, vLock, backLash, prevDir
     global carLength, carWidth, rapportDir
 
     #print("setDirAndSpeed: offsetDir=%d offsetSpeed=%d" % (offsetDir, offsetSpeed))
@@ -198,8 +200,20 @@ def setDirAndSpeed (offsetDir, offsetSpeed ) :
     if offsetDir!= 0 :
         if (offsetDir>0 and dCour<dMax) or (offsetDir<0 and dCour>dMin) :
             dCour+=offsetDir
-            print("setDirAndSpeed: tourne %d" %dCour)
+            logDir=dCour
+            direction.speed_sp=60
+            relativePos=offsetDir
+            if (offsetDir*prevDir) <= 0 :
+                prevDir = offsetDir/abs(offsetDir)
+                relativePos += backLash*prevDir
+                print("setDirAndSpeed: prevDir=%d, offsetDir=%d, relativePos=%d" %(prevDir, offsetDir, relativePos))
+            direction.run_to_rel_pos(position_sp = relativePos)
+            dirLock.release()
+            print("setDirAndSpeed: tourne %d ec = %d degrés" %(dCour, dCour*rapportDir))
+            time.sleep(0.1)
         else :
+            logDir=dCour
+            dirLock.release()
             print("setDirAndSpeed: tourne déjà au max %d" %dCour)
 
     if dCour==0 :
@@ -215,10 +229,6 @@ def setDirAndSpeed (offsetDir, offsetSpeed ) :
         roueArriereGauche.run_forever()
         roueArriereDroite.run_forever()
         vLock.release()
-        direction.speed_sp=60
-        direction.run_to_rel_pos(position_sp=offsetDir)
-        time.sleep(2)
-        dirLock.release()
     else :
         angleRoue=rapportDir*dCour*2*math.pi/direction.count_per_rot
         rayon=carLength/(2*math.sin(angleRoue/2))
@@ -228,9 +238,9 @@ def setDirAndSpeed (offsetDir, offsetSpeed ) :
         if offsetSpeed != 0 :
             if (offsetSpeed>0 and vCour<vMax) or (offsetSpeed<0 and vCour>vMin) :
                 vCour+=offsetSpeed
-                print("setDirAndSpeed: dCour=%d vitesse %d" %(dCour, vCour))
+                print("setDirAndSpeed: dCour=%d vitesse %d" %(logDir, vCour))
             else :
-                print("setDirAndSpeed: dCour=%d vitesse déjà au max %d" %(dCour, vCour))
+                print("setDirAndSpeed: dCour=%d vitesse déjà au max %d" %(logDir, vCour))
         if angleRoue>0 :
             roueArriereDroite.speed_sp=-vCour
             roueArriereGauche.speed_sp=-vCour*(rayonGauche/rayonDroit)
@@ -240,11 +250,6 @@ def setDirAndSpeed (offsetDir, offsetSpeed ) :
         roueArriereGauche.run_forever()
         roueArriereDroite.run_forever()
         vLock.release()
-        direction.speed_sp=60
-        direction.run_to_rel_pos(position_sp=offsetDir)
-        time.sleep(0.1)
-        dirLock.release()
-
 
 
 
@@ -274,7 +279,7 @@ def commandeClavier():
     global direction, roueArriereGauche, roueArriereDroite
     global vCour, dCour, v0, vMax, vMin
     global timeDir, d0, dMax, dMin, ch
-    global dirLock, vLock
+    global dirLock, vLock, rapportDir
 
 
     defaultAttr = termios.tcgetattr(stdin.fileno())
@@ -285,9 +290,9 @@ def commandeClavier():
         ch = stdin.read(1)
         termios.tcsetattr(stdin.fileno(), termios.TCSANOW, defaultAttr)
         if ch == 'a':
-            setDirAndSpeed(20,0)
+            setDirAndSpeed(1/rapportDir,0)
         elif ch == 'd':
-            setDirAndSpeed(-20,0)
+            setDirAndSpeed(-1/rapportDir,0)
         elif ch == 'w':
             setDirAndSpeed(0,50)
         elif ch == 's':
