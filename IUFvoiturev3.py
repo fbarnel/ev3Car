@@ -12,6 +12,16 @@ import threading
 import random
 import math
 
+def startTraces():
+    global direction
+    fLogTraces=open("/tmp/dirMotorTraces.txt","w")
+    fLogTraces.write("Int\tPWM\tPos\tSpeed\tKPD\tKPP\tKPI\tKSD\tKSP\tKSI\tState\n")
+    for i in range(1000) :
+        fLogTraces.write("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\n" % (i, direction.duty_cycle, direction.position, direction.speed, direction.position_d, direction.position_p, direction.position_i, direction.speed_d, direction.speed_p, direction.speed_i, direction.state))
+    fLogTraces.close()
+
+
+
 def initVariables():
     global vCour, dCour, v0, vMax, vMin
     global direction, roueArriereGauche, roueArriereDroite
@@ -39,8 +49,8 @@ def initVariables():
     carLength=18.5
     carWidth=15
     rapportDir=12*8/(20*24)
-    dMax=45/rapportDir
-    dMin=-45/rapportDir
+    dMax=145/rapportDir
+    dMin=-145/rapportDir
     backLash=16/rapportDir
     prevDir=0
 
@@ -290,9 +300,9 @@ def commandeClavier():
         ch = stdin.read(1)
         termios.tcsetattr(stdin.fileno(), termios.TCSANOW, defaultAttr)
         if ch == 'a':
-            setDirAndSpeed(1/rapportDir,0)
+            setDirAndSpeed(5/rapportDir,0)
         elif ch == 'd':
-            setDirAndSpeed(-1/rapportDir,0)
+            setDirAndSpeed(-5/rapportDir,0)
         elif ch == 'w':
             setDirAndSpeed(0,50)
         elif ch == 's':
@@ -314,6 +324,7 @@ def main():
     #InitialisationMecanique()
     _thread.start_new_thread(checkButton, ())
     _thread.start_new_thread(checkPareChoc, ())
+    _thread.start_new_thread(startTraces, ())
     #_thread.start_new_thread(checkInfraRouge, ())
     commandeClavier()
     stopAllMotors()
