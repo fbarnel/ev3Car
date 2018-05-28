@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from ev3dev.ev3 import *
+from EnhancedMotor import *
+
 from tty import *
 from sys import *
 
@@ -11,16 +13,6 @@ import _thread
 import threading
 import random
 import math
-
-def startTraces():
-    global direction
-    fLogTraces=open("/tmp/dirMotorTraces.txt","w")
-    fLogTraces.write("Int\tPWM\tPos\tSpeed\tKPD\tKPP\tKPI\tKSD\tKSP\tKSI\tState\n")
-    for i in range(1000) :
-        fLogTraces.write("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\n" % (i, direction.duty_cycle, direction.position, direction.speed, direction.position_d, direction.position_p, direction.position_i, direction.speed_d, direction.speed_p, direction.speed_i, direction.state))
-    fLogTraces.close()
-
-
 
 def initVariables():
     global vCour, dCour, v0, vMax, vMin
@@ -39,9 +31,9 @@ def initVariables():
     dCour=0
     ch = 'x'
 
-    roueArriereGauche = LargeMotor('outD')
-    roueArriereDroite = LargeMotor('outA')
-    direction = MediumMotor('outC')
+    roueArriereGauche = EnhancedLargeMotor('outD')
+    roueArriereDroite = EnhancedLargeMotor('outA')
+    direction = EnhancedMediumMotor('outC')
 
     dirLock=threading.Lock()
     vLock=threading.Lock()
@@ -122,31 +114,12 @@ def InitialisationMecanique():
     roueArriereDroite.stop(stop_action='brake')
     vCour=v0
 
-    #direction.speed_sp=-60
-    #diffpos=-direction.speed_sp
-    #timeDir=250
-    #lastDifPos=0
-    #BigDifPos=10
-
-    #while BigDifPos>1 or BigDifPos<-1 :
-    #    bigLastPos=direction.position
-    #    print(bigLastPos)
-    #    while (diffpos>1 or diffpos<-1) and lastDifPos*diffpos>=0 :
-    #        lastPos=direction.position
-    #        direction.run_timed(time_sp=timeDir)
-    #        time.sleep(0.2)
-    #        currPos=direction.position
-    #        lastDifPos=diffpos
-    #        diffpos=lastPos-currPos
-    #        print(diffpos)
-    #    time.sleep(0.5)
-    #    bigCurPos=direction.position
-    #    print(bigCurPos)
-    #    BigDifPos=bigLastPos-bigCurPos
+    direction.speed_sp=-100
+    direction.run_to_bump( lim_duty_cycle=80, num_int=5, time_out=5000)
+    direction.speed_sp=100
+    direction.run_to_rel_pos( position_sp=400)
 
 
-    #direction.run_to_rel_pos(position_sp=dPosCentered)
-    #time.sleep(2)
     direction.position=0
     dCour=0
 
@@ -270,12 +243,10 @@ def stopAllMotors():
     roueArriereGauche.stop(stop_action='brake')
     roueArriereDroite.stop(stop_action='brake')
 
-    vLock.acquire()
     direction.stop(stop_action='brake')
     roueArriereGauche.stop(stop_action='brake')
     roueArriereDroite.stop(stop_action='brake')
     vCour=v0
-    vLock.release()
 
 def checkButton():
     btn = Button()
@@ -310,21 +281,25 @@ def commandeClavier():
         elif ch == 'x':
             vLock.acquire()
             dirLock.acquire()
-            #InitialisationMecanique()
+            InitialisationMecanique()
             stopAllMotors()
             dirLock.release()
             vLock.release()
             print("arret")
 
+    direction.stopTraces()
+
     #termios.tcsetattr(stdin.fileno(), termios.TCSANOW, defaultAttr)
 
 
 def main():
+    global direction
+
     initVariables()
-    #InitialisationMecanique()
+    direction.startTraces()
+    InitialisationMecanique()
     _thread.start_new_thread(checkButton, ())
     _thread.start_new_thread(checkPareChoc, ())
-    _thread.start_new_thread(startTraces, ())
     #_thread.start_new_thread(checkInfraRouge, ())
     commandeClavier()
     stopAllMotors()
