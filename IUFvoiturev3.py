@@ -116,8 +116,18 @@ def InitialisationMecanique():
 
     direction.speed_sp=-100
     direction.run_to_bump( lim_duty_cycle=80, num_int=5, time_out=5000)
-    direction.speed_sp=100
-    direction.run_to_rel_pos( position_sp=400)
+    time.sleep(2)
+    direction.position=0
+    direction.position_sp=500
+    direction.speed_sp=200
+    direction.stop_action='brake'
+    print("Before Move")
+
+    direction.run_to_abs_pos()
+    time.sleep(3)
+    print("After Move")
+    time.sleep(3)
+    print("After Move2")
 
 
     direction.position=0
@@ -286,6 +296,19 @@ def commandeClavier():
             dirLock.release()
             vLock.release()
             print("arret")
+        elif ch == 'i':
+            print("        direction.startTraces()")
+        elif ch == 'k':
+            print("       direction.stopTraces()")
+        elif ch == 'o':
+            roueArriereGauche.startTraces()
+        elif ch == 'l':
+            roueArriereGauche.stopTraces()
+        elif ch == 'p':
+            roueArriereDroite.startTraces()
+        elif ch == 'ñ':
+            roueArriereDroite.stopTraces()
+
 
     direction.stopTraces()
 
@@ -294,6 +317,16 @@ def commandeClavier():
 
 def main():
     global direction
+
+    voltage = Power_Supply.measured_voltage
+
+    if voltage < 3000 :
+        print("Power %dmV below 3V, too low - Recharge Battery!!!" %voltage)
+        return
+    elseif volage < 5000 :
+        print("Warning, power %dmV, below 5V." %voltage)
+    else :
+        print("Power OK: %dmV" %voltage)
 
     initVariables()
     direction.startTraces()

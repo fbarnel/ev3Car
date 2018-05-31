@@ -1,0 +1,3 @@
+0|w|accélèrer la voiture
+1|s|freiner la voiture
+23|r|hjklhfa

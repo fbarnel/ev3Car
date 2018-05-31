@@ -7,16 +7,6 @@ import _thread
 import threading
 
 
-class toto:
-    def __init__(self):
-        print("toto")
-
-    def acquire(self):
-        print("acquire")
-
-    def release(self):
-        print("release")
-
 class EnhancedMotor(Motor):
     def __init__(self, port):
         super(Motor, self).__init__(port)
