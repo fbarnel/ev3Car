@@ -1,3 +1,11 @@
-0|w|accélèrer la voiture
-1|s|freiner la voiture
-23|r|hjklhfa
+0|a|Turn left 5 degrees
+1|d|Turn right 5 degrees
+2|w|Accelerate 50+
+3|s|Decelerate 50-
+4|x|Stop car
+5|i|Start collecting traces for motor Direction
+6|k|Stop collecting traces for motor Direction
+7|o|Start collecting traces for left rear wheel motor
+8|l|Stop collecting traces for left rear wheel motor
+9|p|Start collecting traces for right rear wheel motor
+10|ñ|Stop collecting traces for right rear wheel motor

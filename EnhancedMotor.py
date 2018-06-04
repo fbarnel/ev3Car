@@ -5,6 +5,7 @@ from ev3dev.ev3 import *
 
 import _thread
 import threading
+import pickle
 
 
 class EnhancedMotor(Motor):
@@ -12,6 +13,24 @@ class EnhancedMotor(Motor):
         super(Motor, self).__init__(port)
         self.__collectingTraces = 0
         self.__motorLock = threading.Lock()
+        self.__tracesLock = threading.Lock()
+        self.__traceFileNum = 0
+        self.__base_path = ''
+
+    dataTrace = {
+        'interrupt' : 0,
+        'PWM' : 0,
+        'Pos' : 0,
+        'Speed' : 0,
+        'KPD' : 0,
+        'KPP' : 0,
+        'KPI' : 0,
+        'KSD' : 0,
+        'KSP' : 0,
+        'KSI' : 0,
+        'State' : 'hold'
+    }
+
 
     def run_to_bump(self, lim_duty_cycle=100, num_int=1, time_out=-1):
         num_int_high_pwm=0
@@ -24,7 +43,7 @@ class EnhancedMotor(Motor):
             self.__motorLock.acquire()
             theDutyCycle = abs(self.duty_cycle)
             self.__motorLock.release()
-            print("CurrDuutyCycle=%d, limDC=%d, limNumInt=%d, IntHigh=%d" %(theDutyCycle, lim_duty_cycle, num_int, num_int_high_pwm))
+            print("Current duty cycle=%d, limDC=%d, limNumInt=%d, IntHigh=%d" %(theDutyCycle, lim_duty_cycle, num_int, num_int_high_pwm))
             if theDutyCycle > lim_duty_cycle :
                 num_int_high_pwm+=1
             else :
@@ -32,26 +51,62 @@ class EnhancedMotor(Motor):
         self.stop(stop_action='coast')
         print("BUMP condition for motor_%s!" %(self.address) )
 
-    def runTraces(self, path="/tmp/dirMotorTraces.txt"):
-        fLogTraces=open(path,"w")
-        fLogTraces.write("Int\tPWM\tPos\tSpeed\tKPD\tKPP\tKPI\tKSD\tKSP\tKSI\tState\n")
+    def runTraces(self):
+        self.__tracesLock.acquire()
         self.__collectingTraces = 1
-        interrupt=0
+        interrupt = 0
+        listTrace = []
+        fullPath = self.__basepath + str(self.__traceFileNum) + '.bin'
+        fLogTraces = open(fullPath,'wb')
         while self.__collectingTraces :
             self.__motorLock.acquire()
             theDutyCycle = self.duty_cycle
             self.__motorLock.release()
-            fLogTraces.write("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%s\n" % (interrupt, theDutyCycle, self.position, self.speed, self.position_d, self.position_p, self.position_i, self.speed_d, self.speed_p, self.speed_i, self.state))
+            self.dataTrace = (interrupt, theDutyCycle, self.position, self.speed, self.position_d, self.position_p, self.position_i, self.speed_d, self.speed_p, self.speed_i, self.state)
+            listTrace.append(dataTrace)
             interrupt+=1
-        fLogTraces.close()
+            if not interrupt%2000:
+                pickle.dump(listTrace, fLogTraces, pickle.DEFAULT_PROTOCOL)
+                fLogTraces.close()
+                self.__traceFileNum+=1
+                fullPath = path + str(self.__traceFileNum) + '.bin'
+                fLogTraces = open(fullPath,'wb')
 
-    def startTraces(self, dir_for_traces="/tmp"):
-        full_path = dir_for_traces + '/' + self.address + "MotorTraces.txt"
-        print("full path=%s" %(full_path))
-        _thread.start_new_thread(self.runTraces, (full_path, ) )
+        if interrupt%2000:
+            pickle.dump(listTrace, fLogTraces, pickle.DEFAULT_PROTOCOL)
+            self.__traceFileNum+=1
+
+        fLogTraces.close()
+        self.__tracesLock.release()
+
+    def startTraces(self, dir_for_traces='/tmp'):
+        self.__base_path = dir_for_traces + '/' + self.address + 'MotorTraces'
+        print("base path=%s" %(self.__base_path))
+        _thread.start_new_thread(self.runTraces, () )
 
     def stopTraces(self):
         self.__collectingTraces = 0
+        self.__tracesLock.acquire()
+        self.__tracesToTxt()
+        self.__traceFileNum = 0
+        self.__tracesLock.release()
+
+    def __tracesToTxt(self):
+        pathTxt = self.__basePath+'.txt'
+        with open(path, 'w') as fLogTracesTxt:
+            fLogTracesTxt.write("Int\tPWM\tPos\tSpeed\tKPD\tKPP\tKPI\tKSD\tKSP\tKSI\tState\n")
+            for fileNum in range(self.__traceFileNum):
+                pathBin = self.__basePath+str(fileNum)+'.bin'
+                with open(path, 'rb') as fLogTracesBin:
+                    data = pickle.load(fLogTracesBin)
+
+                    for dataTrace in data:
+                        fLogTracesTxt.write(dataTrace)
+
+                fLogTracesBin.close()
+        fLogTracesTxt.close()
+
+
 
 class EnhancedMediumMotor(MediumMotor, EnhancedMotor):
     def __init__(self, port):
