@@ -4,9 +4,16 @@ from sys import *
 import termios
 import collections
 
+def add_Handler(myClass, index):
+    def internalHandler(self):
+        print("This is Handler%d" %index)
+
+    internalHandler.__name__ = "_KeyController__Handler_" + str(index)
+    setattr(myClass, internalHandler.__name__, internalHandler)
+
 KeyCmd=collections.namedtuple('KeyCmd',['index','key','description','handler'])
 
-class KeyController:
+class KeyController():
     def __init__ (self, path="config.txt"):
         self.__config=[]
         self.__parse(path)
@@ -16,6 +23,7 @@ class KeyController:
         with open(path,'r') as fConfig:
             for line in fConfig:
                 listParam=line.split("|")
+                add_Handler(KeyController, int(listParam[0]))
                 self.__config.append(KeyCmd(int(listParam[0]),*listParam[1:],getattr(self,"_KeyController__Handler_"+listParam[0])))
 
     def __len__(self):
@@ -42,15 +50,6 @@ class KeyController:
             return [keyCmd.index for keyCmd in self.__config if keyCmd.key==ch][0]
         else :
             return -1
-
-    def __Handler_0(self):
-        print("Handler0")
-
-    def __Handler_1(self):
-        print("Handler1")
-
-    def __Handler_23(self):
-        print("Handler23")
 
     def threadCode(self):
         defaultAttr = termios.tcgetattr(stdin.fileno())
