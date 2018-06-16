@@ -6,7 +6,7 @@ from ev3dev.ev3 import *
 import _thread
 import threading
 import pickle
-
+import math
 
 class EnhancedMotor(Motor):
     def __init__(self, port):
@@ -107,6 +107,45 @@ class EnhancedMotor(Motor):
         fLogTracesTxt.close()
 
 
+#When transformation is linear, gear teeth represents number of teeth to advance 1m
+#When transformation is a rotation, gear teeth represents number of teeth to turn 360 degrees
+gearDescr = {
+        'sameAxis'  : 1,
+        'toLinear'  : 1,
+        'gearTeeth' : math.pi*0.07
+}
+
+gearDescr0={'sameAxis': 1, 'toLinear': 0, 'gearTeeth':12}
+gearDescr1={'sameAxis': 0, 'toLinear': 0, 'gearTeeth':20}
+gearDescr2={'sameAxis': 1, 'toLinear': 0, 'gearTeeth':8}
+gearDescr3={'sameAxis': 0, 'toLinear': 0, 'gearTeeth':24}
+listGearsDir=[gearDescr0,gearDescr1,gearDescr2,gearDescr3]
+
+
+
+
+class MechSystem():
+    def __init__(self, gears):
+        self.__gears = gears
+    def getType(self):
+        if self.__gears[-1]['toLinear'] :
+            return 'Linear'
+        else :
+            return 'Rotation'
+
+    #When transformation type is linear this methods return number of meter per motor rotation
+    #When transformation type is rotation this methods return number of rotation per motor rotation
+    def getGearTransform(self):
+        transform=1
+        for gearDescr in self.__gears:
+            if gearDescr['sameAxis'] :
+                transform *= gearDescr['gearTeeth']
+            else :
+                transform /= (-gearDescr['gearTeeth'])
+        return transform
+
+    #TBD define moves, turn, distance speed using transform. Necessary?
+
 
 class EnhancedMediumMotor(MediumMotor, EnhancedMotor):
     def __init__(self, port):
@@ -117,5 +156,4 @@ class EnhancedLargeMotor(LargeMotor, EnhancedMotor):
     def __init__(self, port):
         super(LargeMotor, self).__init__(port)
         super(EnhancedMotor, self).__init__(port)
-
 

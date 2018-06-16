@@ -4,6 +4,8 @@
 from ev3dev.ev3 import *
 from EnhancedMotor import *
 
+from KeyControl import *
+
 from tty import *
 from sys import *
 
@@ -115,7 +117,7 @@ def InitialisationMecanique():
     vCour=v0
 
     direction.speed_sp=-100
-    direction.run_to_bump( lim_duty_cycle=80, num_int=5, time_out=5000)
+    direction.run_to_bump( lim_duty_cycle=70, num_int=5, time_out=5000)
     time.sleep(2)
     direction.position=0
     direction.position_sp=500
@@ -265,68 +267,81 @@ def checkButton():
         if btn.any():
             stopAllMotors()
 
+KC=KeyController()
 
-def commandeClavier():
-    global direction, roueArriereGauche, roueArriereDroite
-    global vCour, dCour, v0, vMax, vMin
-    global timeDir, d0, dMax, dMin, ch
-    global dirLock, vLock, rapportDir
+@KC.handler
+def Handler_0():
+    global rapportDir
+    setDirAndSpeed(5/rapportDir,0)
 
+@KC.handler
+def Handler_1():
+    global rapportDir
+    setDirAndSpeed(-5/rapportDir,0)
 
-    defaultAttr = termios.tcgetattr(stdin.fileno())
-    #setraw(stdin.fileno())
+@KC.handler
+def Handler_2():
+    setDirAndSpeed(0,50)
 
-    while ch!='q':
-        setraw(stdin.fileno())
-        ch = stdin.read(1)
-        termios.tcsetattr(stdin.fileno(), termios.TCSANOW, defaultAttr)
-        if ch == 'a':
-            setDirAndSpeed(5/rapportDir,0)
-        elif ch == 'd':
-            setDirAndSpeed(-5/rapportDir,0)
-        elif ch == 'w':
-            setDirAndSpeed(0,50)
-        elif ch == 's':
-            setDirAndSpeed(0,-50)
-        elif ch == 'x':
-            vLock.acquire()
-            dirLock.acquire()
-            InitialisationMecanique()
-            stopAllMotors()
-            dirLock.release()
-            vLock.release()
-            print("arret")
-        elif ch == 'i':
-            print("        direction.startTraces()")
-        elif ch == 'k':
-            print("       direction.stopTraces()")
-        elif ch == 'o':
-            roueArriereGauche.startTraces()
-        elif ch == 'l':
-            roueArriereGauche.stopTraces()
-        elif ch == 'p':
-            roueArriereDroite.startTraces()
-        elif ch == 'ñ':
-            roueArriereDroite.stopTraces()
+@KC.handler
+def Handler_3():
+    setDirAndSpeed(0,-50)
 
+@KC.handler
+def Handler_4():
+    global vLock, dirLock
+    vLock.acquire()
+    dirLock.acquire()
+    InitialisationMecanique()
+    stopAllMotors()
+    dirLock.release()
+    vLock.release()
+    print("arret")
 
+@KC.handler
+def Handler_5():
+    global direction
+    direction.startTraces()
+
+@KC.handler
+def Handler_6():
+    global direction
     direction.stopTraces()
 
-    #termios.tcsetattr(stdin.fileno(), termios.TCSANOW, defaultAttr)
+@KC.handler
+def Handler_7():
+    global roueArriereGauche
+    roueArriereGauche.startTraces()
 
+@KC.handler
+def Handler_8():
+    global roueArriereGauche
+    roueArriereGauche.stopTraces()
+
+@KC.handler
+def Handler_9():
+    global roueArriereDroite
+    roueArriereDroite.startTraces()
+
+@KC.handler
+def Handler_10():
+    global roueArriereDroite
+    roueArriereDroite.stopTraces()
 
 def main():
     global direction
 
-    voltage = Power_Supply.measured_voltage
+    powerSupply=PowerSupply()
 
-    if voltage < 3000 :
-        print("Power %dmV below 3V, too low - Recharge Battery!!!" %voltage)
+    voltage = powerSupply.measured_voltage/1000000.0
+
+    if voltage < 3.0 :
+        print("Power %.2fV below 3V, too low - Recharge Battery!!!" %voltage)
         return
-    elseif volage < 5000 :
-        print("Warning, power %dmV, below 5V." %voltage)
+    elif voltage < 5.0 :
+        print("Warning, power %.2fV, below 5V." %voltage)
     else :
-        print("Power OK: %dmV" %voltage)
+        print("Power OK: %.2fV" %voltage)
 
     initVariables()
     direction.startTraces()
@@ -334,7 +349,7 @@ def main():
     _thread.start_new_thread(checkButton, ())
     _thread.start_new_thread(checkPareChoc, ())
     #_thread.start_new_thread(checkInfraRouge, ())
-    commandeClavier()
+    KC.threadCode()
     stopAllMotors()
 
 main()
