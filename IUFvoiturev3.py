@@ -117,10 +117,11 @@ def InitialisationMecanique():
     vCour=v0
 
     direction.speed_sp=-100
-    direction.run_to_bump( lim_duty_cycle=70, num_int=5, time_out=5000)
+    #7.61 -> 41
+    direction.run_to_bump( lim_duty_cycle=41, num_int=5, time_out=5000)
     time.sleep(2)
     direction.position=0
-    direction.position_sp=500
+    direction.position_sp=480
     direction.speed_sp=200
     direction.stop_action='brake'
     print("Before Move")

@@ -15,7 +15,7 @@ class EnhancedMotor(Motor):
         self.__motorLock = threading.Lock()
         self.__tracesLock = threading.Lock()
         self.__traceFileNum = 0
-        self.__base_path = ''
+        self.__basePath = ''
 
     dataTrace = {
         'interrupt' : 0,
@@ -56,9 +56,10 @@ class EnhancedMotor(Motor):
         self.__collectingTraces = 1
         interrupt = 0
         listTrace = []
-        fullPath = self.__basepath + str(self.__traceFileNum) + '.bin'
+        fullPath = self.__basePath + str(self.__traceFileNum) + '.bin'
         fLogTraces = open(fullPath,'wb')
         while self.__collectingTraces :
+            print("traces enabled in while=%d" %self.__collectingTraces)
             self.__motorLock.acquire()
             theDutyCycle = self.duty_cycle
             self.__motorLock.release()
@@ -80,12 +81,13 @@ class EnhancedMotor(Motor):
         self.__tracesLock.release()
 
     def startTraces(self, dir_for_traces='/tmp'):
-        self.__base_path = dir_for_traces + '/' + self.address + 'MotorTraces'
-        print("base path=%s" %(self.__base_path))
+        self.__basePath = dir_for_traces + '/' + self.address + 'MotorTraces'
+        print("base path=%s" %(self.__basePath))
         _thread.start_new_thread(self.runTraces, () )
 
     def stopTraces(self):
         self.__collectingTraces = 0
+        print("traces enabled in stopTraces=%d" %self.__collectingTraces)
         self.__tracesLock.acquire()
         self.__tracesToTxt()
         self.__traceFileNum = 0
