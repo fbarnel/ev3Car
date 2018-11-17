@@ -1,5 +1,6 @@
 from EnhancedMotor import *
 
+
 class Car:
     #Sait faire:
     #Aller tout droit, v constante, accel, decel
@@ -25,13 +26,19 @@ class Car:
             self.__motor = _EnhancedMediumMotor(port)
 
         def MechInit():
-             __motor.speed_sp=-100
+             self.__backlashDeg     = 16
+             self.__maxAngleDeg     = 80
+             self.__rotSpeedDegSec  = 40
+             self.__bumpSpeedDegSec = 20
+
+             __motor.speed_sp=-(__bumpSpeedDegSec/__mech.getGearTransform())
+
              #7.61 -> 41
              __motor.run_to_bump( lim_duty_cycle=41, num_int=5, time_out=5000)
              time.sleep(2)
              __motor.position=0
-             __motor.position_sp=480
-             __motor.speed_sp=200
+             __motor.position_sp=(__maxAngleDeg + __backlashDeg)/__mech.getGearTransform()
+             __motor.speed_sp=__rotSpeedDegSec/__mech.getGearTransform()
              __motor.stop_action='brake'
              print("Before Move")
 
@@ -41,9 +48,14 @@ class Car:
              time.sleep(3)
              print("After Move2")
 
-
+#Use degre as count_per_rot is 360
+#Use angleDegre for MechInit constant and count_per_rot
+#Use anglrDeg for backlash
              __motor.position=0
 
-        def Set(self, angleRad):
+
+        def Set(self, angleDegre):
+
+
 
 
