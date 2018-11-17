@@ -45,7 +45,7 @@ class Car:
              __motor.run_to_abs_pos()
              time.sleep(3)
              print("After Move")
-             time.sleep(3)
+             #time.sleep(3)
              print("After Move2")
 
 #Use degre as count_per_rot is 360
