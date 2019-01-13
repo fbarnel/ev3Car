@@ -1,6 +1,6 @@
 from EnhancedMotor import *
 from KeyControl import *
-from car.py import *
+from Car import *
 
 def main():
     print("Import works fine!")

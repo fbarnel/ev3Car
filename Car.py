@@ -40,13 +40,8 @@ class Car:
              __motor.position_sp=(__maxAngleDeg + __backlashDeg)/__mech.getGearTransform()
              __motor.speed_sp=__rotSpeedDegSec/__mech.getGearTransform()
              __motor.stop_action='brake'
-             print("Before Move")
-
              __motor.run_to_abs_pos()
              time.sleep(3)
-             print("After Move")
-             #time.sleep(3)
-             print("After Move2")
 
 #Use degre as count_per_rot is 360
 #Use angleDegre for MechInit constant and count_per_rot
@@ -55,6 +50,13 @@ class Car:
 
 
         def Set(self, angleDegre):
+            if (abs(angleDegre) < __maxAngleDeg) :
+                __motor.position_sp = angleDegre/__mech.getGearTransform()
+                __motor.speed_sp=__rotSpeedDegSec/__mech.getGearTransform()
+                __motor.stop_action='brake'
+                __motor.run_to_abs_pos()
+
+
 
 
 
