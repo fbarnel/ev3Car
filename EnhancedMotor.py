@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from ev3dev.ev3 import *
-
 import _thread
 import threading
 import pickle
 import math
+import platform
 
-class EnhancedMotor(Motor):
+osVersion = platform.uname()[3]
+
+if "ev3dev-ev3" in osVersion :
+    from ev3dev import ev3
+else :
+    from FakeModules import ev3
+
+
+class EnhancedMotor(ev3.Motor):
     def __init__(self, port):
-        super(Motor, self).__init__(port)
+        super(ev3.Motor, self).__init__(port)
         self.__collectingTraces = 0
         self.__motorLock = threading.Lock()
         self.__tracesLock = threading.Lock()
@@ -149,13 +156,13 @@ class MechSystem():
     #TBD define moves, turn, distance speed using transform. Necessary?
 
 
-class EnhancedMediumMotor(MediumMotor, EnhancedMotor):
+class EnhancedMediumMotor(ev3.MediumMotor, EnhancedMotor):
     def __init__(self, port):
-        super(MediumMotor, self).__init__(port)
+        super(ev3.MediumMotor, self).__init__(port)
         super(EnhancedMotor, self).__init__(port)
 
-class EnhancedLargeMotor(LargeMotor, EnhancedMotor):
+class EnhancedLargeMotor(ev3.LargeMotor, EnhancedMotor):
     def __init__(self, port):
-        super(LargeMotor, self).__init__(port)
+        super(ev3.LargeMotor, self).__init__(port)
         super(EnhancedMotor, self).__init__(port)
 
